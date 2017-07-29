@@ -53,7 +53,13 @@ cfg = Configuration(
                         'that often contains the buildroot paths',
             required=False,
             default=True,
-        )
+        ),
+        use_pip_install=BoolOption(
+            description='Whether to use pip install to install the package '
+                        'in the venv',
+            required=False,
+            default=False,
+        ),
     ),
 )
 
@@ -124,9 +130,14 @@ class Extension(interface.Extension):
                 )
             )
 
+        spec.blocks.install.append('cd %{SOURCE0}')
+
+        if config.python_venv.use_pip_install:
+            spec.blocks.install.append('%{venv_pip} .')
+        else:
+            spec.blocks.install.append('%{venv_python} setup.py install')
+
         spec.blocks.install.extend((
-            'cd %{SOURCE0}',
-            '%{venv_python} setup.py install',
             'cd -',
             '# RECORD files are used by wheels for checksum. They contain path'
             ' names which',
