@@ -60,6 +60,12 @@ cfg = Configuration(
             required=False,
             default=False,
         ),
+        cleanup_venv=BoolOption(
+            description='Whether to remove pip, wheel and setuptools from the '
+                        'venv before packaging',
+            required=False,
+            default=False,
+        ),
     ),
 )
 
@@ -156,5 +162,32 @@ class Extension(interface.Extension):
                 'their debug information',
                 'find %{venv_dir}/lib -type f -name "*.so" | xargs -r strip',
             ))
+
+        if config.python_venv.cleanup_venv:
+            paths_to_remove = [
+                'activate', 'activate.csh', 'activate.fish',
+                'activate_this.py', 'easy_install', 'easy_install-*', 'pip',
+                'pip*', 'python-config', 'wheel',
+            ]
+
+            for path in paths_to_remove:
+                spec.blocks.install.append(
+                    'rm -rf %{{venv_dir}}/bin/{0}'.format(path)
+                )
+
+            paths_to_remove = [
+                '__pycache__/easy_install.*.pyc', 'easy_install.py', 'pip',
+                'pip-*.dist-info', 'wheel', 'wheel-*.dist-info'
+            ]
+
+            for path in paths_to_remove:
+                spec.blocks.install.append(
+                    'rm -rf %{{venv_dir}}/lib/{0}/site-packages/{1}'
+                    .format(config.python_venv.python, path)
+                )
+
+            spec.blocks.install.append(
+                'rm -rf %{venv_dir}/pip-selfcheck.json'
+            )
 
         return spec
