@@ -66,6 +66,11 @@ cfg = Configuration(
             required=False,
             default=False,
         ),
+        bin_files=ListOption(
+            description='Files to move to /usr/bin.',
+            option=StringOption(),
+            default=(),
+        ),
     ),
 )
 
@@ -189,5 +194,15 @@ class Extension(interface.Extension):
             spec.blocks.install.append(
                 'rm -rf %{venv_dir}/pip-selfcheck.json'
             )
+
+        if config.python_venv.bin_files:
+            spec.blocks.install.append('mkdir -p %{buildroot}/usr/bin')
+            spec.blocks.files.append('/usr/bin')
+
+            for path in config.python_venv.bin_files:
+                spec.blocks.install.append(
+                    'mv %{{venv_dir}}/bin/{0} %{{buildroot}}/usr/bin/{0}'
+                    .format(path)
+                )
 
         return spec
