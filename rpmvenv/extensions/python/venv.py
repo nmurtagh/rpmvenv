@@ -66,6 +66,11 @@ cfg = Configuration(
             required=False,
             default=False,
         ),
+        bin_files=ListOption(
+            description='Files to move to /usr/bin.',
+            option=StringOption(),
+            default=(),
+        ),
     ),
 )
 
@@ -164,5 +169,15 @@ class Extension(interface.Extension):
                 'their debug information',
                 'find %{venv_dir}/lib -type f -name "*.so" | xargs -r strip',
             ))
+
+        if config.python_venv.bin_files:
+            spec.blocks.install.append('mkdir -p %{buildroot}/usr/bin')
+
+            for path in config.python_venv.bin_files:
+                spec.blocks.files.append('/usr/bin/{0}'.format(path))
+                spec.blocks.install.append(
+                    'mv %{{venv_dir}}/bin/{0} %{{buildroot}}/usr/bin/{0}'
+                    .format(path)
+                )
 
         return spec
